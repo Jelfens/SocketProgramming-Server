@@ -1,4 +1,5 @@
 ﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
 #include <winsock2.h>
@@ -13,7 +14,6 @@ int main(int argc, char* argv[]) {
     WSADATA wsa;
     SOCKET s;
     struct sockaddr_in server;
-    char* buffer;
 
     printf("\nInitialising Winsock...");
 
@@ -57,19 +57,43 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     //BURDAN DEVAM
-    //// �leti�im kurulur
-    //char buffer[BUFFER_SIZE];
-    //while (1)
-    //{
-    //    // Veri al�n�r
-    //    int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
-    //    if (bytes_received <= 0)
-    //        break;
+    // �leti�im kurulur
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+    while (1)
+    {
+        // Veri al�n�r
+        memset(buffer, 0, BUFFER_SIZE);
+        int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+
+        // Calculate the parity
+        int parity = 0;
+        for (int i = 0; i < BUFFER_SIZE; i++)
+            parity ^= buffer[i];
+
+        printf("Server Calculated Parity : %d\n", parity);
+
+        
+        // Receive the parity check
+        char parity_check_bytes[sizeof(int)];
+        if (recv(client_socket, parity_check_bytes, sizeof(parity_check_bytes), 0) < 0)
+            puts("Error receiving parity check.");
+        int parity_check;
+        // convert bytes to int
+        memcpy(&parity_check, parity_check_bytes, sizeof(int));
+        // Compare the parity and the parity check
+        if (parity == parity_check)
+            printf("Message received successfully.\n");
+        else
+            printf("Error: message corrupted.\n");
 
 
-    //    // Veri ekrana yazd�r�l�r
-    //    buffer[bytes_received] = '\0';
-    //    printf("Received: %s\n", buffer);
+        // Veri ekrana yazd�r�l�r
+        if (parity == parity_check) {
+            buffer[bytes_received] = '\0';
+            printf("Received: %s\n", buffer);
+        }
+
 
     //    // Veri g�nderilir
     //    printf("Enter message to send: ");
@@ -77,14 +101,14 @@ int main(int argc, char* argv[]) {
     //    int bytes_sent = send(client_socket, buffer, strlen(buffer), 0);
     //    if (bytes_sent <= 0)
     //        break;
-    //}
+    }
 
-    //// Soketler kapat�l�r
-    //closesocket(client_socket);
-    //closesocket(listen_socket);
+    // Soketler kapat�l�r
+    closesocket(client_socket);
+    
 
-    //// Winsock kapat�l�r
-    //WSACleanup();
+    // Winsock kapat�l�r
+    WSACleanup();
 
     //printf("Mesajı girin");
     //scanf_s("%s",buffer,BUFFER_SIZE);
